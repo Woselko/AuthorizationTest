@@ -1,0 +1,30 @@
+﻿@inherits ErrorBoundaryBase
+
+@if (CurrentException is null)
+{
+    @ChildContent
+}
+else if (ErrorContent is null)
+{
+    <div class="main">
+        <div class="header">
+            <BitButton OnClick="Recover" IconName="@BitIconName.ChromeClose" Variant="BitVariant.Text" />
+        </div>
+        <div>
+            <img src="_content/Test.Client.Core/images/icons/error-triangle.svg" />
+        </div>
+        <h1 class="title">Oops, something went wrong...</h1>
+        @if (showException)
+        {
+            <div class="exception">@CurrentException?.ToString()</div>
+        }
+        <div class="buttons">
+            <BitButton OnClick="Refresh">Refresh</BitButton>
+            <BitButton OnClick="GoHome" Variant="BitVariant.Outline">Home</BitButton>
+        </div>
+    </div>
+}
+else
+{
+    @ErrorContent(CurrentException)
+}
