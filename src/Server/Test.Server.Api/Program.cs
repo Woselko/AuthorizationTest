@@ -1,6 +1,9 @@
 ﻿
 using System;
+using Hangfire.Dashboard;
+using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
+using Hangfire.MemoryStorage;
 
 namespace Test.Server.Api;
 
@@ -23,6 +26,21 @@ public static partial class Program
         builder.ConfigureApiServices();
         builder.Services.AddSharedProjectServices();
 
+        //hangfire
+        GlobalConfiguration.Configuration
+            .UseMemoryStorage();
+        builder.Services.AddHangfire(config => config.UseMemoryStorage());
+        builder.Services.AddHangfireServer();
+
+
+        builder.Services.AddSingleton<SomeSingletonExample>(serviceProvider =>
+        {
+            var example = SomeSingletonExample.Instance;
+            example.Initialize();
+            return example;
+        });
+
+
         var app = builder.Build();
 
         if (AppEnvironment.IsDev())
@@ -31,6 +49,15 @@ public static partial class Program
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await dbContext.Database.EnsureCreatedAsync();
         }
+
+        //hangfire
+        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        {
+            Authorization = new[] { new DashboardAuthorizationFilter() }
+        });
+
+        RecurringJob.AddOrUpdate("JOBEXECUTING", () =>
+            SomeSingletonExample.Instance.ExecuteHangfireJob(), Cron.Minutely);
 
         app.ConfiureMiddlewares();
 
